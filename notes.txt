@@ -1,0 +1,8 @@
+1. Read in a text file and output the contents to the terminal
+2. Extract text from a png file, and output that text to the terminal
+3. Build a web server to return hello world from / route
+4. Get the server to take in a text file contents, and return the text in a response
+5. Take in a png file contents, extract text, return it as a response
+6. Recieve a GRPC basic request and send basic response
+7. Take in a text file contents via GRPC, send back the text
+8. Take in png file contents via GRPC, extract text and send back the text
