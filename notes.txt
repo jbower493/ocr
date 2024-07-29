@@ -1,8 +1,21 @@
-1. Read in a text file and output the contents to the terminal
-2. Extract text from a png file, and output that text to the terminal
-3. Build a web server to return hello world from / route
-4. Get the server to take in a text file contents, and return the text in a response
-5. Take in a png file contents, extract text, return it as a response
-6. Recieve a GRPC basic request and send basic response
-7. Take in a text file contents via GRPC, send back the text
-8. Take in png file contents via GRPC, extract text and send back the text
+- Read in a text file and output the contents to the terminal - done
+- Extract text from a png file, and output that text to the terminal 
+- Build a web server to return hello world from / route
+- Get the server to take in a text file contents, and return the text in a response
+- Take in a png file contents, extract text, return it as a response
+- Recieve a GRPC basic request and send basic response
+- Take in a text file contents via GRPC, send back the text
+- Take in png file contents via GRPC, extract text and send back the text
+
+OCR
+
+"gosseract" package which is a wrapper around tesseract C++ lib
+- Install on windows: https://github.com/UB-Mannheim/tesseract/wiki
+- Add it to path (system env variable)
+- Verify it works on command line `tesseract {infile} {outfile}`
+- Install the go wrapper `go get github.com/otiai10/gosseract`
+
+Error:
+tessbridge.cpp:5:10: fatal error: tesseract/baseapi.h: No such file or directory
+https://github.com/otiai10/gosseract/issues/132
+https://tesseract-ocr.github.io/tessdoc/Compiling.html
