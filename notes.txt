@@ -19,3 +19,8 @@ Error:
 tessbridge.cpp:5:10: fatal error: tesseract/baseapi.h: No such file or directory
 https://github.com/otiai10/gosseract/issues/132
 https://tesseract-ocr.github.io/tessdoc/Compiling.html
+
+With Docker
+- Install WSL
+- Install docker
+- Copy the Dockerfile contents from the gosseract one, into my own Dockerfile in my project, just editing the last line. https://github.com/otiai10/gosseract/blob/main/Dockerfile
