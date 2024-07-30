@@ -1,0 +1,46 @@
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/otiai10/gosseract"
+)
+
+func main() {
+	var filename string = "./test_text.png"
+
+	client := gosseract.NewClient()
+	defer client.Close()
+
+	client.SetImage(filename)
+	text, err := client.Text()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(text)
+}
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+)
+
+func main() {
+	var filename string = "./test_text.png"
+	
+	fmt.Println("hey mate")
+
+	file, err := os.ReadFile(filename)
+
+	if err != nil {
+		log.Fatal("Bob")
+	}
+
+	os.Stdout.Write(file)
+}
