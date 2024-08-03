@@ -24,3 +24,27 @@ With Docker
 - Install WSL
 - Install docker
 - Copy the Dockerfile contents from the gosseract one, into my own Dockerfile in my project, just editing the last line. https://github.com/otiai10/gosseract/blob/main/Dockerfile
+
+- Docker build: `docker build -t jamie/go-ocr:1.0 .`
+t is for tag, . is for the current dir
+
+- Docker run: `docker run 5309bfe795d3`
+3rd arg is the image id (can get from `docker images`)
+
+- Port forwarding: `docker run -p 5000:3000 5309bfe795d3
+{port on local}:{port on docker container}
+
+- Mounting: `docker run -p 5000:3000 -v C:\Users\j_bow\coding\go\ocr:/app 850309022eb3`
+
+`docker run -p 8080:8080 -v C:\\Users\\j_bow\\coding\\go\\ocr:/app d8b1d5cedf6c`
+
+When changing a file, air did not hot reload it. This was because I was editing the file in windows file system, not in the mnt of wsl.
+The solution was to open the project dir in vscode with remote explorer, in wsl.
+
+Then after doing that, I got the following error with the air build:
+error obtaining VCS status: exit status 128
+        Use -buildvcs=false to disable VCS stamping.
+failed to build, error: exit status 1
+
+This was due to there being no git directory in the wsl mount of the project. So I fixed this by adding `-buildvcs=false` to the .air.toml file.
+So the build cmd looked like this: cmd = "go build -o ./tmp/main.exe -buildvcs=false ."

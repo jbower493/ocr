@@ -10,6 +10,9 @@ RUN apt-get install -y -qq \
   tesseract-ocr-deu \
   tesseract-ocr-jpn
 
+# Install air for hot reloading
+RUN go install github.com/air-verse/air@latest
+
 # Copy the go.mod and go.sum files
 COPY go.mod go.sum ./
 
@@ -20,7 +23,11 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o main .
+# RUN go build -o main .
+
+# Expose port
+EXPOSE 8080
 
 # Run the Go app when the container launches
-CMD ["./main"]
+# CMD ["./main"]
+CMD ["air", "-c", ".air.toml"]
