@@ -52,3 +52,9 @@ So the build cmd looked like this: cmd = "go build -o ./tmp/main.exe -buildvcs=f
 `docker build -t jamie/go-ocr:1.0 .`
 `docker images` - to get image id
 `docker run -p 8080:8080 -v /home/jbower/projects/go/ocr:/app {image id}`
+
+Install Go in WSL:
+- `wget https://dl.google.com/go/go1.22.5.linux-amd64.tar.gz`
+- `sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz`
+- `export PATH=$PATH:/usr/local/go/bin`
+- Install go extension in wsl in vscode

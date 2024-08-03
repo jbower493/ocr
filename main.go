@@ -4,17 +4,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"ocr/utils"
 
 	"github.com/otiai10/gosseract/v2"
 )
 
 func handler(w http.ResponseWriter, r * http.Request) {
-	fmt.Fprintf(w, "Hello from the air\n")
+	fmt.Fprintf(w, "Hello from the winter air\n")
 }
 
 func main() {
-	var filename string = "./test_text.png"
+	sum := utils.Add(4, 5)
+	fmt.Println(sum)
 
+	var filename string = "./test_text.png"
+	
 	client := gosseract.NewClient()
 	defer client.Close()
 
@@ -32,5 +36,4 @@ func main() {
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":8080", nil)
-
 }
