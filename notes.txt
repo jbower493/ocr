@@ -48,3 +48,7 @@ failed to build, error: exit status 1
 
 This was due to there being no git directory in the wsl mount of the project. So I fixed this by adding `-buildvcs=false` to the .air.toml file.
 So the build cmd looked like this: cmd = "go build -o ./tmp/main.exe -buildvcs=false ."
+
+`docker build -t jamie/go-ocr:1.0 .`
+`docker images` - to get image id
+`docker run -p 8080:8080 -v /home/jbower/projects/go/ocr:/app {image id}`
