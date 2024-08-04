@@ -58,3 +58,6 @@ Install Go in WSL:
 - `sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz`
 - `export PATH=$PATH:/usr/local/go/bin`
 - Install go extension in wsl in vscode
+
+Melkey Go project structure
+https://github.com/Melkeydev/go-htmx-starter/blob/main/.air.toml

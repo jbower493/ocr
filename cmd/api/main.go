@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"ocr/utils"
+	"ocr/internal/utils"
 	"os"
 
 	"github.com/otiai10/gosseract/v2"
@@ -34,7 +34,7 @@ func handleBasePath(w http.ResponseWriter, r * http.Request) {
 }
 
 func handleImagePath(w http.ResponseWriter, r * http.Request) {
-	text, err := ImageToText("./test_text.png")
+	text, err := ImageToText("assets/test_text.png")
 	if err != nil {
 		fmt.Fprintf(w, "Something went wrong")
 	}
@@ -51,7 +51,7 @@ func readAndBase64EncodeImage(filepath string) (string, error) {
 }
 
 func handleEncodePath(w http.ResponseWriter, r * http.Request) {
-	encoded, err := readAndBase64EncodeImage("happy_birthday.jpg")
+	encoded, err := readAndBase64EncodeImage("assets/happy_birthday.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
