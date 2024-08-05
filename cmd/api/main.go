@@ -1,13 +1,12 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"ocr/internal/utils"
-	"os"
+	"strings"
 
 	"github.com/otiai10/gosseract/v2"
 )
@@ -29,40 +28,40 @@ func ImageToText(filename string) (string, error) {
 	return text, err
 }
 
-func handleBasePath(w http.ResponseWriter, r * http.Request) {
-	fmt.Fprintf(w, "Hello from the Go web server")
-}
+func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
+	// Read request body
+	decoder := json.NewDecoder(r.Body)
 
-func handleImagePath(w http.ResponseWriter, r * http.Request) {
-	text, err := ImageToText("assets/test_text.png")
-	if err != nil {
-		fmt.Fprintf(w, "Something went wrong")
+	type RequestBody struct {
+		Image string `json:"image"`
 	}
 
-	fmt.Fprintf(w, text)
-}
-
-func readAndBase64EncodeImage(filepath string) (string, error) {
-	contents, err := os.ReadFile(filepath)
-
-	encoded := base64.StdEncoding.EncodeToString(contents)
-
-	return encoded, err
-}
-
-func handleEncodePath(w http.ResponseWriter, r * http.Request) {
-	encoded, err := readAndBase64EncodeImage("assets/happy_birthday.jpg")
-	if err != nil {
-		log.Fatal(err)
+	var requestBody RequestBody
+	decodeErr := decoder.Decode(&requestBody)
+	if decodeErr != nil {
+		log.Fatal(decodeErr)
+		http.Error(w, "Some shit went wrong", http.StatusInternalServerError)
 	}
 
+	// Parse out mime type and base64 data from request
+	var imageUrlWithoutDataPart string = strings.Split(requestBody.Image, "data:")[1]
+	var splitImageUrlWithoutDataPart []string = strings.Split(imageUrlWithoutDataPart, ";base64,")
+	var mimeType string = splitImageUrlWithoutDataPart[0]
+	var base64String string = splitImageUrlWithoutDataPart[1]
+
+	fmt.Printf("Mime type: %q\n", mimeType)
+	fmt.Printf("Base64 string: %q\n", base64String)
+
+	// Extract text from image data
+
+	// Respond
 	type ResponseData struct {
-		Data string `json:"data"`
+		Text string `json:"text"`
 		Success bool `json:"success"`
 	}
 
 	response := ResponseData {
-		Data: encoded,
+		Text: "encoded",
 		Success: true,
 	}
 
@@ -71,7 +70,7 @@ func handleEncodePath(w http.ResponseWriter, r * http.Request) {
 
 	encodeErr := json.NewEncoder(w).Encode(response)
 	if encodeErr != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, encodeErr.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -80,8 +79,6 @@ func main() {
 	sum := utils.Add(4, 5)
 	fmt.Println(sum)
 
-	http.HandleFunc("/", handleBasePath)
-	http.HandleFunc("/image", handleImagePath)
-	http.HandleFunc("/encode", handleEncodePath)
+	http.HandleFunc("/image-to-text", handleImageToTextPath)
 	http.ListenAndServe(":8080", nil)
 }
