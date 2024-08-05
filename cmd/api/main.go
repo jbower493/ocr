@@ -1,32 +1,13 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"ocr/internal/utils"
+	"ocr/internal/textRecognition"
 	"strings"
-
-	"github.com/otiai10/gosseract/v2"
 )
-
-func ImageToText(filename string) (string, error) {
-	client := gosseract.NewClient()
-	defer client.Close()
-
-	err := client.SetImage(filename)
-	if err != nil {
-		log.Fatalf("Error performing set image on client: %v", err)
-	}
-
-	text, err := client.Text()
-	if err != nil {
-		log.Fatalf("Error performing OCR: %v", err)
-	}
-
-	return text, err
-}
 
 func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 	// Read request body
@@ -39,8 +20,7 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 	var requestBody RequestBody
 	decodeErr := decoder.Decode(&requestBody)
 	if decodeErr != nil {
-		log.Fatal(decodeErr)
-		http.Error(w, "Some shit went wrong", http.StatusInternalServerError)
+		http.Error(w, "Failed to decode request body", http.StatusInternalServerError)
 	}
 
 	// Parse out mime type and base64 data from request
@@ -50,9 +30,17 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 	var base64String string = splitImageUrlWithoutDataPart[1]
 
 	fmt.Printf("Mime type: %q\n", mimeType)
-	fmt.Printf("Base64 string: %q\n", base64String)
 
 	// Extract text from image data
+	base64ByteSlice, decodeBase64StringError := base64.StdEncoding.DecodeString(base64String)
+	if decodeBase64StringError != nil {
+		http.Error(w, "Failed to decode base64 string", http.StatusInternalServerError)
+	}
+	
+	extractedText, extractTextError := textRecognition.Base64BytesToText(base64ByteSlice)
+	if extractTextError != nil {
+		http.Error(w, "Failed to extract text from image", http.StatusInternalServerError)
+	}
 
 	// Respond
 	type ResponseData struct {
@@ -61,7 +49,7 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 	}
 
 	response := ResponseData {
-		Text: "encoded",
+		Text: extractedText,
 		Success: true,
 	}
 
@@ -76,9 +64,6 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 
 
 func main() {
-	sum := utils.Add(4, 5)
-	fmt.Println(sum)
-
 	http.HandleFunc("/image-to-text", handleImageToTextPath)
 	http.ListenAndServe(":8080", nil)
 }
