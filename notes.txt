@@ -1,8 +1,4 @@
-- Read in a text file and output the contents to the terminal - done
-- Extract text from a png file, and output that text to the terminal 
-- Build a web server to return hello world from / route
-- Get the server to take in a text file contents, and return the text in a response
-- Take in a png file contents, extract text, return it as a response
+- Make sure it can handle HEIC files (iPhone image format). If not, use something like imagemagick to convert to format it can handle
 - Recieve a GRPC basic request and send basic response
 - Take in a text file contents via GRPC, send back the text
 - Take in png file contents via GRPC, extract text and send back the text
