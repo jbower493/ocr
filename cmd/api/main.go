@@ -5,11 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"ocr/internal/imageProcessing"
 	"ocr/internal/textRecognition"
 	"strings"
 )
 
-func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
+func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		fmt.Fprintf(w, "Hello options")
+		return
+	}
+
 	// Read request body
 	decoder := json.NewDecoder(r.Body)
 
@@ -29,14 +35,18 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 	var mimeType string = splitImageUrlWithoutDataPart[0]
 	var base64String string = splitImageUrlWithoutDataPart[1]
 
+	// Print mime type
 	fmt.Printf("Mime type: %q\n", mimeType)
+
+	// Grayscale
+	imageProcessing.ConvertToGrayscale()
 
 	// Extract text from image data
 	base64ByteSlice, decodeBase64StringError := base64.StdEncoding.DecodeString(base64String)
 	if decodeBase64StringError != nil {
 		http.Error(w, "Failed to decode base64 string", http.StatusInternalServerError)
 	}
-	
+
 	extractedText, extractTextError := textRecognition.Base64BytesToText(base64ByteSlice)
 	if extractTextError != nil {
 		http.Error(w, "Failed to extract text from image", http.StatusInternalServerError)
@@ -44,12 +54,12 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 
 	// Respond
 	type ResponseData struct {
-		Text string `json:"text"`
-		Success bool `json:"success"`
+		Text    string `json:"text"`
+		Success bool   `json:"success"`
 	}
 
-	response := ResponseData {
-		Text: extractedText,
+	response := ResponseData{
+		Text:    extractedText,
 		Success: true,
 	}
 
@@ -61,7 +71,6 @@ func handleImageToTextPath(w http.ResponseWriter, r * http.Request) {
 		http.Error(w, encodeErr.Error(), http.StatusInternalServerError)
 	}
 }
-
 
 func main() {
 	http.HandleFunc("/image-to-text", handleImageToTextPath)
