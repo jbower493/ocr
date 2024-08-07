@@ -38,8 +38,14 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	// Print mime type
 	fmt.Printf("Mime type: %q\n", mimeType)
 
+	/***** TEMP GRAYSCALE START *****/
 	// Grayscale
-	imageProcessing.ConvertToGrayscale()
+	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String)
+	if grayscaleError != nil {
+		http.Error(w, "Failed to convert to grayscale", http.StatusInternalServerError)
+	}
+	fmt.Println(grayscaleImg)
+	/***** TEMP END *****/
 
 	// Extract text from image data
 	base64ByteSlice, decodeBase64StringError := base64.StdEncoding.DecodeString(base64String)
@@ -47,6 +53,7 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to decode base64 string", http.StatusInternalServerError)
 	}
 
+	// TODO: once I have the grayscale byte slice, feed it into here
 	extractedText, extractTextError := textRecognition.Base64BytesToText(base64ByteSlice)
 	if extractTextError != nil {
 		http.Error(w, "Failed to extract text from image", http.StatusInternalServerError)
