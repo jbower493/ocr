@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"ocr/internal/httpHelpers"
 	"ocr/internal/imageProcessing"
 	"ocr/internal/textRecognition"
 	"strings"
@@ -26,37 +26,28 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	var requestBody RequestBody
 	decodeErr := decoder.Decode(&requestBody)
 	if decodeErr != nil {
-		http.Error(w, "Failed to decode request body", http.StatusInternalServerError)
+		httpHelpers.HandleErrorResponse(w, "Failed to decode request body", 500)
+		return
 	}
 
 	// Parse out mime type and base64 data from request
 	var imageUrlWithoutDataPart string = strings.Split(requestBody.Image, "data:")[1]
 	var splitImageUrlWithoutDataPart []string = strings.Split(imageUrlWithoutDataPart, ";base64,")
-	var mimeType string = splitImageUrlWithoutDataPart[0]
 	var base64String string = splitImageUrlWithoutDataPart[1]
 
-	// Print mime type
-	fmt.Printf("Mime type: %q\n", mimeType)
-
-	/***** TEMP GRAYSCALE START *****/
 	// Grayscale
-	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String)
+	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String, true)
+
 	if grayscaleError != nil {
-		http.Error(w, "Failed to convert to grayscale", http.StatusInternalServerError)
+		httpHelpers.HandleErrorResponse(w, "Failed to convert image to grayscale", 500)
+		return
 	}
-	fmt.Println(grayscaleImg)
-	/***** TEMP END *****/
 
 	// Extract text from image data
-	base64ByteSlice, decodeBase64StringError := base64.StdEncoding.DecodeString(base64String)
-	if decodeBase64StringError != nil {
-		http.Error(w, "Failed to decode base64 string", http.StatusInternalServerError)
-	}
-
-	// TODO: once I have the grayscale byte slice, feed it into here
-	extractedText, extractTextError := textRecognition.Base64BytesToText(base64ByteSlice)
+	extractedText, extractTextError := textRecognition.Base64BytesToText(grayscaleImg)
 	if extractTextError != nil {
-		http.Error(w, "Failed to extract text from image", http.StatusInternalServerError)
+		httpHelpers.HandleErrorResponse(w, "Failed to extract text from image", 500)
+		return
 	}
 
 	// Respond
@@ -70,13 +61,7 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	encodeErr := json.NewEncoder(w).Encode(response)
-	if encodeErr != nil {
-		http.Error(w, encodeErr.Error(), http.StatusInternalServerError)
-	}
+	httpHelpers.HandleSuccessResponse(w, response)
 }
 
 func main() {
