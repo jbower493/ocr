@@ -60,3 +60,4 @@ https://github.com/Melkeydev/go-htmx-starter/blob/main/.air.toml
 
 Progress:
 - Currently it works for simple screenshots with white background, but it doesn't work with a picture taken of a recipe book page. Need to try processing the image before feeding it through tesseract. Try "Grayscale" and "thresholding"
+- Turns out with the recipe book pages, it seems to be somehow rotating them into landscape before reading them. When I snip a landscape section of the image, it works. Only issue is that if there are sections of text along side each other, it tries to read from left to right, so it confuses the sections. Need to find a way to programatically split up the image into the sections before reading the text.
