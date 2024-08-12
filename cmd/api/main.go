@@ -33,10 +33,12 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	// Parse out mime type and base64 data from request
 	var imageUrlWithoutDataPart string = strings.Split(requestBody.Image, "data:")[1]
 	var splitImageUrlWithoutDataPart []string = strings.Split(imageUrlWithoutDataPart, ";base64,")
+	var mimeType string = splitImageUrlWithoutDataPart[0]
+	var extension string = strings.Split(mimeType, "/")[1]
 	var base64String string = splitImageUrlWithoutDataPart[1]
 
 	// Grayscale
-	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String, true)
+	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String, extension, false)
 
 	if grayscaleError != nil {
 		httpHelpers.HandleErrorResponse(w, "Failed to convert image to grayscale", 500)
