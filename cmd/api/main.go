@@ -38,15 +38,15 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	var base64String string = splitImageUrlWithoutDataPart[1]
 
 	// Grayscale
-	grayscaleImg, grayscaleError := imageProcessing.ConvertToGrayscale(base64String, extension, false)
+	preparedImg, prepareErr := imageProcessing.PrepareImageForOcr(base64String, extension, true)
 
-	if grayscaleError != nil {
-		httpHelpers.HandleErrorResponse(w, "Failed to convert image to grayscale", 500)
+	if prepareErr != nil {
+		httpHelpers.HandleErrorResponse(w, "Failed to prepare image for OCR", 500)
 		return
 	}
 
 	// Extract text from image data
-	extractedText, extractTextError := textRecognition.Base64BytesToText(grayscaleImg)
+	extractedText, extractTextError := textRecognition.Base64BytesToText(preparedImg)
 	if extractTextError != nil {
 		httpHelpers.HandleErrorResponse(w, "Failed to extract text from image", 500)
 		return
