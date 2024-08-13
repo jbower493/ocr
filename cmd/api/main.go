@@ -41,6 +41,7 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	preparedImg, prepareErr := imageProcessing.PrepareImageForOcr(base64String, extension, true)
 
 	if prepareErr != nil {
+		fmt.Println(prepareErr)
 		httpHelpers.HandleErrorResponse(w, "Failed to prepare image for OCR", 500)
 		return
 	}
@@ -48,6 +49,7 @@ func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
 	// Extract text from image data
 	extractedText, extractTextError := textRecognition.Base64BytesToText(preparedImg)
 	if extractTextError != nil {
+		fmt.Println(extractTextError)
 		httpHelpers.HandleErrorResponse(w, "Failed to extract text from image", 500)
 		return
 	}
