@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"ocr/internal/httpHelpers"
 	"ocr/internal/imageProcessing"
@@ -88,15 +89,25 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Read file binary data
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "Unable to read file data", http.StatusInternalServerError)
+		return
+	}
+
 	mimeType := header.Header.Get("Content-Type")
-	param3 := r.FormValue("param3")
-	fmt.Println("Other field: ", param3)
-	fmt.Println("Mime type: ", mimeType)
+	// param3 := r.FormValue("param3") // get extra form fields out of the request
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", mimeType)
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	fmt.Fprintf(w, "Successfully failed lol")
+	_, err = w.Write(fileData)
+	if err != nil {
+		http.Error(w, "Unable to write filedata to response", http.StatusInternalServerError)
+	}
+
+	// fmt.Fprintf(w, "Successfully failed lol")
 }
 
 func main() {
