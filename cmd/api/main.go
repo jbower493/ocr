@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
+	"image"
+	"image/png"
 	"net/http"
 	"ocr/internal/httpHelpers"
 	"ocr/internal/imageProcessing"
 	"ocr/internal/textRecognition"
 	"strings"
+
+	"github.com/chai2010/webp"
 )
 
 func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
@@ -89,20 +93,55 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Read file binary data
-	fileData, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, "Unable to read file data", http.StatusInternalServerError)
-		return
-	}
-
 	mimeType := header.Header.Get("Content-Type")
 	// param3 := r.FormValue("param3") // get extra form fields out of the request
 
-	w.Header().Set("Content-Type", mimeType)
+	// Decode image
+	var img image.Image
+	var imageDecodeErr error
+
+	// PNG
+	if mimeType == "image/png" {
+		img, imageDecodeErr = png.Decode(file)
+	} else {
+		http.Error(w, "Extention not supported", http.StatusBadRequest)
+		return
+	}
+
+	if imageDecodeErr != nil {
+		http.Error(w, "Failed to decode png", http.StatusInternalServerError)
+		return
+	}
+
+	var buf bytes.Buffer
+
+	webpEncodeErr := webp.Encode(&buf, img, &webp.Options{Lossless: true})
+	if webpEncodeErr != nil {
+		http.Error(w, "Failed to encode webp", http.StatusInternalServerError)
+		return
+	}
+
+	// if err = ioutil.WriteFile("output.webp", buf.Bytes(), 0666); err != nil {
+	// 	http.Error(w, "Failed to write webp file", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// m, err := webp.Decode(bytes.NewReader(data))
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+
+	// Read file binary data
+	// fileData, err := io.ReadAll(file)
+	// if err != nil {
+	// 	http.Error(w, "Unable to read file data", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	w.Header().Set("Content-Type", "image/webp")
 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	_, err = w.Write(fileData)
+	_, err = w.Write(buf.Bytes())
 	if err != nil {
 		http.Error(w, "Unable to write filedata to response", http.StatusInternalServerError)
 	}
