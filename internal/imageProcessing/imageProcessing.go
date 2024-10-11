@@ -12,6 +12,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/rwcarlsen/goexif/exif"
+	"gocv.io/x/gocv"
 )
 
 func saveImageToFile(filename string, imgData []byte) error {
@@ -29,22 +30,103 @@ func saveImageToFile(filename string, imgData []byte) error {
 	return nil
 }
 
-func rotateImage(img image.Image, orientation string) image.Image {
-	switch orientation {
+func getCorrectlyRotatedJpeg(img image.Image, base64String string) (image.Image, error) {
+	imgBytes, _ := base64.StdEncoding.DecodeString(base64String)
+	imgReader := bytes.NewReader(imgBytes)
+	imgReader.Seek(0, 0)
+
+	exifData, exifErr := exif.Decode(imgReader)
+	if exifErr != nil {
+		return nil, exifErr
+	}
+
+	orientation, exifGetErr := exifData.Get(exif.Orientation)
+	if exifGetErr != nil {
+		return nil, exifGetErr
+	}
+
+	switch orientation.String() {
 	case "1":
-		return img
+		return img, nil
 	case "3":
-		return imaging.Rotate180(img)
+		return imaging.Rotate180(img), nil
 	case "6":
-		return imaging.Rotate270(img)
+		return imaging.Rotate270(img), nil
 	case "8":
-		return imaging.Rotate90(img)
+		return imaging.Rotate90(img), nil
 	default:
-		return img
+		return img, nil
 	}
 }
 
-func ConvertToGrayscale(base64String string, extension string, saveToFile bool) ([]byte, error) {
+func convertImgToGrayscale(img image.Image) image.Image {
+	bounds := img.Bounds()
+	grayImg := image.NewGray(bounds)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			originalColor := img.At(x, y)
+			grayColor := color.GrayModel.Convert(originalColor)
+			grayImg.Set(x, y, grayColor)
+		}
+	}
+
+	return grayImg
+}
+
+func matToImage(mat gocv.Mat) image.Image {
+	// Get the Mat's size and type
+	width := mat.Cols()
+	height := mat.Rows()
+	channels := mat.Channels()
+
+	// Create an RGBA image with the same size as the Mat
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	// Iterate over the Mat and set pixels in the RGBA image
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			bgr := mat.GetUCharAt(y, x*channels)
+			g := mat.GetUCharAt(y, x*channels+1)
+			r := mat.GetUCharAt(y, x*channels+2)
+			img.Set(x, y, color.RGBA{R: r, G: g, B: bgr, A: 255})
+		}
+	}
+
+	return img
+}
+
+func imageToMat(img image.Image) gocv.Mat {
+	mat := gocv.NewMatWithSize(img.Bounds().Dy(), img.Bounds().Dx(), gocv.MatTypeCV8UC3)
+	defer mat.Close()
+
+	for y := 0; y < img.Bounds().Dy(); y++ {
+		for x := 0; x < img.Bounds().Dx(); x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+
+			mat.SetUCharAt(y, x*3, uint8(b>>8))
+			mat.SetUCharAt(y, x*3+1, uint8(g>>8))
+			mat.SetUCharAt(y, x*3+2, uint8(r>>8))
+		}
+	}
+
+	return mat
+}
+
+func performThresholding(grayImg image.Image) image.Image {
+	mat := imageToMat(grayImg)
+
+	binaryImg := gocv.NewMat()
+	defer binaryImg.Close()
+
+	gocv.Threshold(mat, &binaryImg, 127, 255, gocv.ThresholdBinary)
+
+	// convert it back to "image.Image" type and return it
+	thresholdedImg := matToImage(binaryImg)
+	return thresholdedImg
+}
+
+func PrepareImageForOcr(base64String string, extension string, saveToFile bool) ([]byte, error) {
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(base64String))
 	img, _, err := image.Decode(reader)
 	if err != nil {
@@ -53,51 +135,26 @@ func ConvertToGrayscale(base64String string, extension string, saveToFile bool) 
 
 	// It seems that only jpeg's have exif data embedded in the image. If it's jpeg, get the orientation and rotate it to it's original orientation
 	if extension == "jpeg" {
-		imgBytes, _ := base64.StdEncoding.DecodeString(base64String)
-		imgReader := bytes.NewReader(imgBytes)
-		imgReader.Seek(0, 0)
-
-		exifData, exifErr := exif.Decode(imgReader)
-		if exifErr != nil {
-			return nil, exifErr
+		rotatedImg, rotateErr := getCorrectlyRotatedJpeg(img, base64String)
+		if rotateErr != nil {
+			return nil, rotateErr
 		}
 
-		orientation, exifGetErr := exifData.Get(exif.Orientation)
-		if exifGetErr != nil {
-			return nil, exifGetErr
-		}
-
-		img = rotateImage(img, orientation.String())
+		img = rotatedImg
 	}
 
-	bounds := img.Bounds()
-	grayImg := image.NewGray(bounds)
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			originalColor := img.At(x, y)
-
-			// Experimenting with getting the colour of each pixel, checking if it's black (or close to black), and if not, set it to white (to remove background)
-			// r, g, b, a := originalColor.RGBA()
-			// if g < 65535 {
-			// 	message := fmt.Sprintf("Original colour at %d, %d: %d, %d, %d, %d", x, y, r, g, b, a)
-			// 	fmt.Println(message)
-			// }
-
-			grayColor := color.GrayModel.Convert(originalColor)
-			grayImg.Set(x, y, grayColor)
-		}
-	}
+	grayImg := convertImgToGrayscale(img)
+	thresholdedImg := performThresholding(grayImg)
 
 	buffer := new(bytes.Buffer)
 
 	if extension == "png" {
-		pngEncodeErr := png.Encode(buffer, grayImg)
+		pngEncodeErr := png.Encode(buffer, thresholdedImg)
 		if pngEncodeErr != nil {
 			return nil, pngEncodeErr
 		}
 	} else if extension == "jpeg" {
-		jpegEncodeErr := jpeg.Encode(buffer, grayImg, nil)
+		jpegEncodeErr := jpeg.Encode(buffer, thresholdedImg, nil)
 		if jpegEncodeErr != nil {
 			return nil, jpegEncodeErr
 		}
@@ -107,7 +164,8 @@ func ConvertToGrayscale(base64String string, extension string, saveToFile bool) 
 
 	// Just to verify that the grayscaling worked, optionally save image to file
 	if saveToFile {
-		saveImageToFile("grayscale."+extension, imageByteSlice)
+		// saveImageToFile("grayscale."+extension, imageByteSlice)
+		saveImageToFile("thresholded."+extension, imageByteSlice)
 	}
 
 	return imageByteSlice, nil
