@@ -96,11 +96,12 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	mimeType := header.Header.Get("Content-Type")
 	// param3 := r.FormValue("param3") // get extra form fields out of the request
 
-	// Decode image
+	// Convert to webp
 	var img image.Image
 	var imageDecodeErr error
 
 	// PNG
+	// TODO: support other file types. Each one we decode, store the img and err in existing vars and just check them once after all if statements
 	if mimeType == "image/png" {
 		img, imageDecodeErr = png.Decode(file)
 	} else {
@@ -121,23 +122,6 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if err = ioutil.WriteFile("output.webp", buf.Bytes(), 0666); err != nil {
-	// 	http.Error(w, "Failed to write webp file", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// m, err := webp.Decode(bytes.NewReader(data))
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-
-	// Read file binary data
-	// fileData, err := io.ReadAll(file)
-	// if err != nil {
-	// 	http.Error(w, "Unable to read file data", http.StatusInternalServerError)
-	// 	return
-	// }
-
 	w.Header().Set("Content-Type", "image/webp")
 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -145,8 +129,6 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Unable to write filedata to response", http.StatusInternalServerError)
 	}
-
-	// fmt.Fprintf(w, "Successfully failed lol")
 }
 
 func main() {
