@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
+	"image/jpeg"
 	"image/png"
 	"net/http"
 	"ocr/internal/httpHelpers"
@@ -13,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/chai2010/webp"
+	"github.com/nfnt/resize"
 )
 
 func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +106,8 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	// TODO: support other file types. Each one we decode, store the img and err in existing vars and just check them once after all if statements
 	if mimeType == "image/png" {
 		img, imageDecodeErr = png.Decode(file)
+	} else if mimeType == "image/jpg" || mimeType == "image/jpeg" {
+		img, imageDecodeErr = jpeg.Decode(file)
 	} else {
 		http.Error(w, "Extention not supported", http.StatusBadRequest)
 		return
@@ -114,9 +118,16 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Resize image so that the width is 500px and the height is auto
+	newWidth := 500
+	newHeight := 0
+
+	resizedImg := resize.Resize(uint(newWidth), uint(newHeight), img, resize.Lanczos3)
+
 	var buf bytes.Buffer
 
-	webpEncodeErr := webp.Encode(&buf, img, &webp.Options{Lossless: true})
+	// Setting "quality" to 80% reduces the file size from around 300kb to 50kb!
+	webpEncodeErr := webp.Encode(&buf, resizedImg, &webp.Options{Quality: 80})
 	if webpEncodeErr != nil {
 		http.Error(w, "Failed to encode webp", http.StatusInternalServerError)
 		return
