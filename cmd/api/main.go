@@ -118,7 +118,7 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Resize image so that the width is 500px and the height is auto
+	// Resize image so that the width is 500px and the height is auto to maintain the aspect ratio
 	newWidth := 500
 	newHeight := 0
 
