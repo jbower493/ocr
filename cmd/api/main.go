@@ -2,78 +2,16 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"net/http"
-	"ocr/internal/httpHelpers"
-	"ocr/internal/imageProcessing"
-	"ocr/internal/textRecognition"
 	"strings"
 
+	"ocr/internal/resizeImage"
+
 	"github.com/chai2010/webp"
-	"github.com/nfnt/resize"
 )
-
-func handleImageToTextPath(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "OPTIONS" {
-		fmt.Fprintf(w, "Hello options")
-		return
-	}
-
-	// Read request body
-	decoder := json.NewDecoder(r.Body)
-
-	type RequestBody struct {
-		Image string `json:"image"`
-	}
-
-	var requestBody RequestBody
-	decodeErr := decoder.Decode(&requestBody)
-	if decodeErr != nil {
-		httpHelpers.HandleErrorResponse(w, "Failed to decode request body", 500)
-		return
-	}
-
-	// Parse out mime type and base64 data from request
-	var imageUrlWithoutDataPart string = strings.Split(requestBody.Image, "data:")[1]
-	var splitImageUrlWithoutDataPart []string = strings.Split(imageUrlWithoutDataPart, ";base64,")
-	var mimeType string = splitImageUrlWithoutDataPart[0]
-	var extension string = strings.Split(mimeType, "/")[1]
-	var base64String string = splitImageUrlWithoutDataPart[1]
-
-	// Grayscale
-	preparedImg, prepareErr := imageProcessing.PrepareImageForOcr(base64String, extension, true)
-
-	if prepareErr != nil {
-		fmt.Println(prepareErr)
-		httpHelpers.HandleErrorResponse(w, "Failed to prepare image for OCR", 500)
-		return
-	}
-
-	// Extract text from image data
-	extractedText, extractTextError := textRecognition.Base64BytesToText(preparedImg)
-	if extractTextError != nil {
-		fmt.Println(extractTextError)
-		httpHelpers.HandleErrorResponse(w, "Failed to extract text from image", 500)
-		return
-	}
-
-	// Respond
-	type ResponseData struct {
-		Text    string `json:"text"`
-		Success bool   `json:"success"`
-	}
-
-	response := ResponseData{
-		Text:    extractedText,
-		Success: true,
-	}
-
-	httpHelpers.HandleSuccessResponse(w, response)
-}
 
 func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -119,10 +57,7 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Resize image so that the width is 500px and the height is auto to maintain the aspect ratio
-	newWidth := 500
-	newHeight := 0
-
-	resizedImg := resize.Resize(uint(newWidth), uint(newHeight), img, resize.Lanczos3)
+	resizedImg := resizeImage.ResizeImage(img)
 
 	var buf bytes.Buffer
 
@@ -143,7 +78,6 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/image-to-text", handleImageToTextPath)
 	http.HandleFunc("/optimize-image", handleOptimizeImagePath)
 	http.ListenAndServe(":8080", nil)
 }
