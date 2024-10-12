@@ -109,7 +109,7 @@ func handleOptimizeImagePath(w http.ResponseWriter, r *http.Request) {
 	} else if mimeType == "image/jpg" || mimeType == "image/jpeg" {
 		img, imageDecodeErr = jpeg.Decode(file)
 	} else {
-		http.Error(w, "Extention not supported", http.StatusBadRequest)
+		http.Error(w, "."+strings.Split(mimeType, "/")[1]+" extention not supported", http.StatusBadRequest)
 		return
 	}
 
