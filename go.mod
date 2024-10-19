@@ -9,6 +9,8 @@ require (
 
 require (
 	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/otiai10/gosseract/v2 v2.4.1 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
+	gocv.io/x/gocv v0.39.0 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 )
