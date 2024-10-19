@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	optimizeImage "ocr/api/handler"
+	"ocr/api/handler/optimizeImage"
 )
 
 func main() {
