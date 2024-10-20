@@ -91,11 +91,11 @@ func GetTextRegions(argImage image.Image) {
 		gocv.Rectangle(&img, rect, color.RGBA{0, 255, 0, 0}, 2)
 
 		// Crop the region of interest (ROI)
-		// region := img.Region(rect)
+		region := img.Region(rect)
 
 		// Save the cropped region to file or pass it to OCR directly
-		regionFile := fmt.Sprintf("column_%d.png", i)
-		// gocv.IMWrite(regionFile, region)
+		regionFile := fmt.Sprintf("temp_images/column_%d.png", i)
+		gocv.IMWrite(regionFile, region)
 
 		// Perform OCR on the cropped region
 		client.SetImage(regionFile)
@@ -108,5 +108,5 @@ func GetTextRegions(argImage image.Image) {
 	}
 
 	// Optionally, save the image with drawn boxes to see the regions
-	gocv.IMWrite("image_with_boxes.png", img)
+	gocv.IMWrite("temp_images/image_with_boxes.png", img)
 }
