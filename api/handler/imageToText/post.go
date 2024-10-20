@@ -59,6 +59,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// Do segmentation on the image to get each region of text, then feed each region into the OCR separately
 	/**************************************************************************************/
 
+	textRecognition.GetTextRegions(imageReadyForOcr)
+
 	// Get regions of text in image
 	var regions []image.Image
 	regions = append(regions, imageReadyForOcr)

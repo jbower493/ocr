@@ -7,7 +7,7 @@ import (
 	"gocv.io/x/gocv"
 )
 
-func matToImage(mat gocv.Mat) image.Image {
+func MatToImage(mat gocv.Mat) image.Image {
 	// Get the Mat's size and type
 	width := mat.Cols()
 	height := mat.Rows()
@@ -29,7 +29,7 @@ func matToImage(mat gocv.Mat) image.Image {
 	return img
 }
 
-func imageToMat(img image.Image) gocv.Mat {
+func ImageToMat(img image.Image) gocv.Mat {
 	mat := gocv.NewMatWithSize(img.Bounds().Dy(), img.Bounds().Dx(), gocv.MatTypeCV8UC3)
 	defer mat.Close()
 
@@ -47,7 +47,7 @@ func imageToMat(img image.Image) gocv.Mat {
 }
 
 func Threshold(grayImg image.Image) image.Image {
-	mat := imageToMat(grayImg)
+	mat := ImageToMat(grayImg)
 
 	binaryImg := gocv.NewMat()
 	defer binaryImg.Close()
@@ -55,6 +55,6 @@ func Threshold(grayImg image.Image) image.Image {
 	gocv.Threshold(mat, &binaryImg, 127, 255, gocv.ThresholdBinary)
 
 	// convert it back to "image.Image" type and return it
-	thresholdedImg := matToImage(binaryImg)
+	thresholdedImg := MatToImage(binaryImg)
 	return thresholdedImg
 }
