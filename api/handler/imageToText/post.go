@@ -1,7 +1,7 @@
 package imageToText
 
 import (
-	"fmt"
+	"image"
 	"net/http"
 	"ocr/internal/convertImageToGrayscale"
 	"ocr/internal/decodeImage"
@@ -24,7 +24,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("file_to_optimize")
+	file, header, err := r.FormFile("image_to_text")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -47,8 +47,6 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// Rotate
 	rotatedImg := imageOrientation.Rotate(decodedImage, orientationValue)
 
-	/***********************************************************/
-
 	// Grayscale
 	grayscaleImage := convertImageToGrayscale.Convert(rotatedImg)
 
@@ -56,32 +54,37 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// thresholdedImage := imageThresholding.Threshold(grayscaleImage)
 
 	extension := strings.Split(mimeType, "/")[1]
-	extractedText, _ := textRecognition.ImageToText(grayscaleImage, extension)
+	imageReadyForOcr := grayscaleImage
 
-	fmt.Println(extractedText)
+	// Do segmentation on the image to get each region of text, then feed each region into the OCR separately
+	/**************************************************************************************/
 
-	// TEMP
-	// Create the output file
-	// outputFile, err := os.Create("output.webp")
-	// if err != nil {
-	// 	log.Fatalf("failed to create output file: %v", err)
-	// }
-	// defer outputFile.Close()
-	// err = webp.Encode(outputFile, grayscaleImage, &webp.Options{Lossless: false, Quality: 80})
-	// if err != nil {
-	// 	log.Fatalf("failed to encode image to webp: %v", err)
-	// }
+	// Get regions of text in image
+	var regions []image.Image
+	regions = append(regions, imageReadyForOcr)
 
-	/***********************************************************/
+	// Loop through regions and extract the text from each one
+	var textRegions []string
+
+	for i := 0; i < len(regions); i++ {
+		extractedText, extractionError := textRecognition.ImageToText(grayscaleImage, extension)
+		if extractionError != nil {
+			textRegions = append(textRegions, "")
+		} else {
+			textRegions = append(textRegions, extractedText)
+		}
+	}
+
+	/**************************************************************************************/
 
 	// Respond
 	type ResponseData struct {
-		Text    string `json:"text"`
-		Success bool   `json:"success"`
+		TextRegions []string `json:"text_regions"`
+		Success     bool     `json:"success"`
 	}
 	response := ResponseData{
-		Text:    extractedText,
-		Success: true,
+		TextRegions: textRegions,
+		Success:     true,
 	}
 	httpHelpers.HandleSuccessResponse(w, response)
 }
