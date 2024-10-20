@@ -1,7 +1,7 @@
 package imageToText
 
 import (
-	"image"
+	"fmt"
 	"net/http"
 	"ocr/internal/convertImageToGrayscale"
 	"ocr/internal/decodeImage"
@@ -57,23 +57,21 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	imageReadyForOcr := grayscaleImage
 
 	// Do segmentation on the image to get each region of text, then feed each region into the OCR separately
-	/**************************************************************************************/
-
-	textRecognition.GetTextRegions(imageReadyForOcr)
-
 	// Get regions of text in image
-	var regions []image.Image
-	regions = append(regions, imageReadyForOcr)
+	foundRegions := textRecognition.GetTextRegions(imageReadyForOcr)
 
 	// Loop through regions and extract the text from each one
 	var textRegions []string
 
-	for i := 0; i < len(regions); i++ {
-		extractedText, extractionError := textRecognition.ImageToText(grayscaleImage, extension)
+	for i := 0; i < len(foundRegions); i++ {
+		extractedText, extractionError := textRecognition.ImageToText(foundRegions[i], extension)
 		if extractionError != nil {
 			textRegions = append(textRegions, "")
 		} else {
-			textRegions = append(textRegions, extractedText)
+			replacedNewLines := strings.ReplaceAll(extractedText, "\n", " ")
+
+			fmt.Println(replacedNewLines)
+			textRegions = append(textRegions, replacedNewLines)
 		}
 	}
 
