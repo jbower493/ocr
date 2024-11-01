@@ -17,6 +17,13 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	contentType := r.Header.Get("Content-Type")
+	fmt.Println(contentType)
+	if contentType != "multipart/form-data" {
+		http.Error(w, "Content type not multipart/form-data", http.StatusBadRequest)
+		return
+	}
+
 	// Bitwise operator, shifts the bits of a number to the left, effectively multiplying it by 2. So this is like doing 10 * 2^20, which is aparently equal to 10MB (arg unit is bytes)
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
