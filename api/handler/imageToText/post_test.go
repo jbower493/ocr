@@ -1,6 +1,7 @@
 package imageToText
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,24 +10,27 @@ import (
 )
 
 func TestFailsIfRequestNotMultipartForm(t *testing.T) {
-	req, err := http.NewRequest("POST", "/image-to-text", nil)
+	server := httptest.NewServer(http.HandlerFunc(Post))
+	defer server.Close()
+
+	resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer([]byte("")))
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(Post)
-
-	handler.ServeHTTP(rr, req)
-
-	status := rr.Code
-	if status != http.StatusBadRequest {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 but got %d", resp.StatusCode)
 	}
+
+	defer resp.Body.Close()
 
 	expected := "Content type not multipart/form-data"
-	resp, _ := io.ReadAll(rr.Body)
-	trimmedResp := strings.Trim(string(resp), "\n")
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Error(err)
+	}
+
+	trimmedResp := strings.Trim(string(body), "\n")
 	if trimmedResp != expected {
 		t.Errorf("Expected \"%v\" but got \"%v\"", expected, trimmedResp)
 	}
