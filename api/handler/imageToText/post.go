@@ -18,8 +18,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := r.Header.Get("Content-Type")
-	fmt.Println(contentType)
-	if contentType != "multipart/form-data" {
+
+	if !strings.HasPrefix(contentType, "multipart/form-data") {
 		http.Error(w, "Content type not multipart/form-data", http.StatusBadRequest)
 		return
 	}
@@ -33,7 +33,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("image_to_text")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "No file provided", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
