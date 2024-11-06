@@ -6,7 +6,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	// "os"
+	"net/textproto"
+	"os"
 	"strings"
 	"testing"
 )
@@ -93,25 +94,63 @@ func TestFailsIfNoFileProvided(t *testing.T) {
 	}
 }
 
-/*func TestSucceedsIfFileProvided(t *testing.T) {
-	req, err := http.NewRequest("POST", "/image-to-text", nil)
+func TestFailsIfFileIsUnsupportedMimeType(t *testing.T) {
+	testFile, err := os.Open("../../../assets/testImages/simple_test_1.png")
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+	}
+	defer testFile.Close()
+
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	// fileWriter, err := writer.CreateFormFile("image_to_text", "image_to_text.png")
+	// if err != nil {
+	// 	t.Error(err)
+	// }
+
+	// Set up a custom header for the file part to specify "Content-Type: image/png"
+	partHeader := make(textproto.MIMEHeader)
+	partHeader.Set("Content-Disposition", `form-data; name="image_to_text"; filename="image_to_text.png"`)
+	partHeader.Set("Content-Type", "image/png") // Set the content type here
+
+	// Create a new part in the writer using the custom headers
+	part, err := writer.CreatePart(partHeader)
+	if err != nil {
+		t.Error(err)
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(Post)
-
-	handler.ServeHTTP(rr, req)
-
-	status := rr.Code
-	if status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	_, err = io.Copy(part, testFile)
+	if err != nil {
+		t.Error(err)
 	}
 
-	expected := `{"message":"hello"}`
-	respBody, _ := ioutil.ReadAll(rr.Body)
-	if string(respBody) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", string(respBody), expected)
+	writer.Close()
+
+	server := httptest.NewServer(http.HandlerFunc(Post))
+	defer server.Close()
+
+	resp, err := http.Post(server.URL, writer.FormDataContentType(), &requestBody)
+	if err != nil {
+		t.Error(err)
 	}
-}*/
+
+	// Fail test if status code is not 400
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 but got %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+
+	expected := "Unsupported mime type"
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Fail test if error message is not correct
+	trimmedResp := strings.Trim(string(body), "\n")
+	if trimmedResp != expected {
+		t.Errorf("Expected \"%v\" but got \"%v\"", expected, trimmedResp)
+	}
+}
