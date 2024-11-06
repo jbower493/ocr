@@ -95,7 +95,7 @@ func TestFailsIfNoFileProvided(t *testing.T) {
 }
 
 func TestFailsIfFileIsUnsupportedMimeType(t *testing.T) {
-	testFile, err := os.Open("../../../assets/testImages/simple_test_1.png")
+	testFile, err := os.Open("../../../assets/testImages/test_webp_img.webp")
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,15 +104,10 @@ func TestFailsIfFileIsUnsupportedMimeType(t *testing.T) {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	// fileWriter, err := writer.CreateFormFile("image_to_text", "image_to_text.png")
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-
 	// Set up a custom header for the file part to specify "Content-Type: image/png"
 	partHeader := make(textproto.MIMEHeader)
-	partHeader.Set("Content-Disposition", `form-data; name="image_to_text"; filename="image_to_text.png"`)
-	partHeader.Set("Content-Type", "image/png") // Set the content type here
+	partHeader.Set("Content-Disposition", `form-data; name="image_to_text"; filename="image_to_text.webp"`)
+	partHeader.Set("Content-Type", "image/webp") // Set the content type here
 
 	// Create a new part in the writer using the custom headers
 	part, err := writer.CreatePart(partHeader)
@@ -142,7 +137,7 @@ func TestFailsIfFileIsUnsupportedMimeType(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	expected := "Unsupported mime type"
+	expected := "webp extention not supported"
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)

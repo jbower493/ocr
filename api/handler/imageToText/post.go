@@ -47,6 +47,11 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// Decode image
 	decodedImage, imageDecodeError := decodeImage.Decode(file, mimeType)
 	if imageDecodeError != nil {
+		if strings.HasSuffix(imageDecodeError.Error(), "extention not supported") {
+			http.Error(w, imageDecodeError.Error(), http.StatusBadRequest)
+			return
+		}
+
 		http.Error(w, imageDecodeError.Error(), http.StatusInternalServerError)
 		return
 	}
