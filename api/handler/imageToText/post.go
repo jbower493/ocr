@@ -1,7 +1,6 @@
 package imageToText
 
 import (
-	"fmt"
 	"net/http"
 	"ocr/internal/convertImageToGrayscale"
 	"ocr/internal/decodeImage"
@@ -81,8 +80,6 @@ func Post(w http.ResponseWriter, r *http.Request) {
 			textRegions = append(textRegions, "")
 		} else {
 			replacedNewLines := strings.ReplaceAll(extractedText, "\n", " ")
-
-			fmt.Println(replacedNewLines)
 			textRegions = append(textRegions, replacedNewLines)
 		}
 	}
