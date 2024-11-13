@@ -3,7 +3,6 @@ package imageToText
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -179,9 +178,6 @@ func TestPngSimpleTextColumns(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	//body, err := io.ReadAll(resp.Body)
-	//fmt.Println(body)
-
 	type ResponseJson struct {
 		TextRegions []string `json:"text_regions"`
 		Success     bool     `json:"success"`
@@ -195,14 +191,27 @@ func TestPngSimpleTextColumns(t *testing.T) {
 		t.Error(err)
 	}
 
-	fmt.Println(responseJson.TextRegions[0])
-	fmt.Println(responseJson.TextRegions[1])
-	fmt.Println(responseJson.TextRegions[2])
-	fmt.Println(responseJson.TextRegions[3])
-	fmt.Println(responseJson.Success)
-
 	// Fail test if "success" property of response is not true
 	if !responseJson.Success {
 		t.Errorf("Expected success true but was false")
+	}
+
+	// Fail if incorrect number of regions
+	if len(responseJson.TextRegions) != 4 {
+		t.Errorf("Incorrect number of text regions detected")
+	}
+
+	// Fail if any region has incorrect text
+	expected := []string{
+		"Auto Invites & Reminders (Our system can automatically send invites and reminders to everyone via email",
+		"Borders ‘Add from a variety of colorful borders to make your book shine",
+		"Word Clouds We can automatically create a unique visual using words submitted from everyone.",
+		"Project Co-organizers Give a few people special access to your project so they can help edit and review recipes submitted by others.",
+	}
+
+	for i := 0; i < 4; i++ {
+		if responseJson.TextRegions[i] != expected[i] {
+			t.Errorf("Region index %d has incorrect text. Expected \"%s\" but got \"%s\".", i, expected[i], responseJson.TextRegions[i])
+		}
 	}
 }
